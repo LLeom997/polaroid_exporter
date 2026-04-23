@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polaroid Print Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --dark: #1c1917;
+    --mid: #57534e;
+    --light: #e7e5e4;
+    --accent: #c2410c;
+    --white: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #0f0e0d;
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    color: var(--cream);
+  }
+
+  header p {
+    font-size: 0.8rem;
+    color: var(--mid);
+    margin-top: 4px;
+    font-family: monospace;
+    letter-spacing: 0.08em;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    flex: 1;
+    height: calc(100vh - 80px);
+  }
+
+  .sidebar {
+    background: #161412;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-family: monospace;
+    margin-bottom: 8px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  label.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  label.field span {
+    font-size: 0.7rem;
+    color: var(--mid);
+    font-family: monospace;
+    letter-spacing: 0.06em;
+  }
+
+  select, input[type="text"], input[type="color"] {
+    background: #1f1c1a;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--cream);
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    font-family: Georgia, serif;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  select:hover, input[type="text"]:hover { border-color: rgba(255,255,255,0.2); }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+  input[type="color"] {
+    height: 36px;
+    padding: 3px 6px;
+    cursor: pointer;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 3px;
+  }
+
+  .slider-val {
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: var(--cream);
+    min-width: 38px;
+    text-align: right;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+
+  #dropzone {
+    border: 1.5px dashed rgba(255,255,255,0.15);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  #dropzone:hover, #dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(194,65,12,0.05);
+  }
+
+  #dropzone .icon { font-size: 1.8rem; margin-bottom: 6px; }
+  #dropzone .main-text { font-size: 0.85rem; color: var(--cream); }
+  #dropzone .sub-text { font-size: 0.7rem; color: var(--mid); margin-top: 3px; font-family: monospace; }
+
+  #thumbGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+  }
+
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .thumb .remove {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 16px; height: 16px;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .thumb:hover .remove { opacity: 1; }
+
+  .image-count {
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: var(--mid);
+    text-align: right;
+  }
+
+  .btn-group { display: flex; flex-direction: column; gap: 7px; }
+
+  button {
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: var(--cream);
+    padding: 9px 14px;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+    width: 100%;
+  }
+
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(194,65,12,0.08);
+    color: #ff8c5a;
+  }
+
+  button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: bold;
+  }
+
+  button.primary:hover:not(:disabled) {
+    background: #b43d0c;
+    border-color: #b43d0c;
+    color: #fff;
+  }
+
+  .info-pill {
+    font-size: 0.68rem;
+    font-family: monospace;
+    color: var(--mid);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 4px 10px;
+    text-align: center;
+    display: none;
+  }
+
+  .canvas-area {
+    background: #0a0908;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2rem;
+    gap: 1rem;
+  }
+
+  .canvas-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255,255,255,0.1);
+    gap: 12px;
+  }
+
+  .canvas-placeholder .big { font-size: 3rem; }
+  .canvas-placeholder p { font-size: 0.8rem; font-family: monospace; letter-spacing: 0.1em; }
+
+  #previewCanvas {
+    display: none;
+    max-width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+
+  .page-nav {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    color: var(--mid);
+  }
+
+  .page-nav button {
+    width: auto;
+    padding: 5px 14px;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 700px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    .canvas-area { min-height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Polaroid Print Studio</h1>
+  <p>A4 · A3 · Portrait · Landscape · PNG · PDF</p>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+
+    <div>
+      <div class="section-label">Paper &amp; Layout</div>
+      <div class="control-group">
+        <div class="row2">
+          <label class="field">
+            <span>Paper</span>
+            <select id="paperSize">
+              <option value="a4">A4</option>
+              <option value="a3">A3</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Orientation</span>
+            <select id="orientation">
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Polaroid Style</div>
+      <div class="control-group">
+        <label class="field">
+          <span>Mode</span>
+          <select id="style">
+            <option value="polaroid">Polaroid frame</option>
+            <option value="plain">Plain (no border)</option>
+          </select>
+        </label>
+        <div id="frameOptions">
+          <div class="row2" style="margin-bottom:8px">
+            <label class="field">
+              <span>Frame color</span>
+              <input type="color" id="borderColor" value="#ffffff">
+            </label>
+            <label class="field">
+              <span>Shadow</span>
+              <select id="shadow">
+                <option value="yes">On</option>
+                <option value="no">Off</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span>Caption text</span>
+            <input type="text" id="captionText" placeholder="e.g. Summer 2024">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Image Size &amp; Spacing</div>
+      <div class="control-group">
+        <label class="field">
+          <span>Image size — <span id="imgSizeOut">60</span> mm</span>
+          <div class="slider-row">
+            <input type="range" id="imgSize" min="25" max="130" value="60" step="1">
+          </div>
+        </label>
+        <label class="field">
+          <span>Gap — <span id="gapSizeOut">6</span> mm</span>
+          <div class="slider-row">
+            <input type="range" id="gapSize" min="2" max="25" value="6" step="1">
+          </div>
+        </label>
+        <label class="field">
+          <span>Margin — <span id="marginSizeOut">10</span> mm</span>
+          <div class="slider-row">
+            <input type="range" id="marginSize" min="3" max="30" value="10" step="1">
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Images</div>
+      <div id="dropzone">
+        <div class="icon">📷</div>
+        <div class="main-text">Drop images or click to upload</div>
+        <div class="sub-text">JPG · PNG · WebP · multiple OK</div>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+      </div>
+      <div style="margin-top:8px" id="thumbGrid"></div>
+      <div class="image-count" id="imgCount" style="margin-top:6px;display:none"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="infoBox" class="info-pill"></div>
+
+    <div class="btn-group">
+      <button class="primary" id="btnGenerate" disabled>Generate Layout</button>
+      <div class="row2">
+        <button id="btnPNG" disabled>Download PNG</button>
+        <button id="btnPDF" disabled>Download PDF</button>
+      </div>
+      <button id="btnClear">Clear all images</button>
+    </div>
+
+  </aside>
+
+  <main class="canvas-area">
+    <div class="canvas-placeholder" id="placeholder">
+      <div class="big">🖼</div>
+      <p>Upload images and click Generate Layout</p>
+    </div>
+    <div class="page-nav" id="pageNav">
+      <button id="btnPrevPage">← Prev</button>
+      <span id="pageLabel">Page 1 / 1</span>
+      <button id="btnNextPage">Next →</button>
+    </div>
+    <canvas id="previewCanvas"></canvas>
+  </main>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const dropzone=$('dropzone'), fileInput=$('fileInput'), thumbGrid=$('thumbGrid');
+  const btnGenerate=$('btnGenerate'), btnPNG=$('btnPNG'), btnPDF=$('btnPDF'), btnClear=$('btnClear');
+  const previewCanvas=$('previewCanvas'), placeholder=$('placeholder');
+  const pageNav=$('pageNav'), pageLabel=$('pageLabel');
+  const infoBox=$('infoBox'), imgCount=$('imgCount');
+
+  let images=[], pageCanvases=[], currentPage=0;
+
+  // Sliders
+  function sliderBind(id, outId, suffix=''){
+    const el=$(id), out=$(outId);
+    el.oninput=()=>{ out.textContent=el.value+suffix; };
+  }
+  sliderBind('imgSize','imgSizeOut');
+  sliderBind('gapSize','gapSizeOut');
+  sliderBind('marginSize','marginSizeOut');
+
+  $('style').onchange=()=>{
+    const isPol=$('style').value==='polaroid';
+    $('frameOptions').style.opacity=isPol?'1':'0.35';
+    $('frameOptions').style.pointerEvents=isPol?'':'none';
+  };
+
+  // Drop / upload
+  dropzone.onclick=()=>fileInput.click();
+  dropzone.ondragover=e=>{e.preventDefault();dropzone.classList.add('dragover');};
+  dropzone.ondragleave=()=>dropzone.classList.remove('dragover');
+  dropzone.ondrop=e=>{e.preventDefault();dropzone.classList.remove('dragover');handleFiles(e.dataTransfer.files);};
+  fileInput.onchange=e=>handleFiles(e.target.files);
+
+  function handleFiles(files){
+    Array.from(files).forEach(file=>{
+      if(!file.type.startsWith('image/'))return;
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{
+          images.push({img,name:file.name,src:e.target.result});
+          renderThumbs();
+          btnGenerate.disabled=false;
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderThumbs(){
+    thumbGrid.innerHTML='';
+    images.forEach((item,i)=>{
+      const wrap=document.createElement('div');
+      wrap.className='thumb';
+      const im=document.createElement('img');
+      im.src=item.src;
+      const rm=document.createElement('button');
+      rm.className='remove';rm.textContent='×';
+      rm.onclick=e=>{e.stopPropagation();images.splice(i,1);renderThumbs();if(images.length===0){btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;}};
+      wrap.appendChild(im);wrap.appendChild(rm);
+      thumbGrid.appendChild(wrap);
+    });
+    imgCount.style.display=images.length?'block':'none';
+    imgCount.textContent=`${images.length} image${images.length!==1?'s':''} loaded`;
+  }
+
+  btnClear.onclick=()=>{
+    images=[];renderThumbs();
+    btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;
+    pageCanvases=[];showPage(0);
+    placeholder.style.display='flex';previewCanvas.style.display='none';
+    pageNav.style.display='none';infoBox.style.display='none';
+  };
+
+  btnGenerate.onclick=()=>{
+    pageCanvases=generateLayout();
+    if(pageCanvases.length){
+      currentPage=0;showPage(0);
+      btnPNG.disabled=false;btnPDF.disabled=false;
+    }
+  };
+
+  function showPage(n){
+    currentPage=Math.max(0,Math.min(n,pageCanvases.length-1));
+    if(!pageCanvases.length)return;
+    const src=pageCanvases[currentPage];
+    previewCanvas.width=src.width;
+    previewCanvas.height=src.height;
+    previewCanvas.getContext('2d').drawImage(src,0,0);
+    previewCanvas.style.display='block';
+    placeholder.style.display='none';
+    if(pageCanvases.length>1){
+      pageNav.style.display='flex';
+      pageLabel.textContent=`Page ${currentPage+1} / ${pageCanvases.length}`;
+    } else {
+      pageNav.style.display='none';
+    }
+  }
+
+  $('btnPrevPage').onclick=()=>showPage(currentPage-1);
+  $('btnNextPage').onclick=()=>showPage(currentPage+1);
+
+  // PNG download — all pages stacked
+  btnPNG.onclick=()=>{
+    if(!pageCanvases.length)return;
+    if(pageCanvases.length===1){
+      downloadCanvas(pageCanvases[0],'polaroid-layout.png');
+      return;
+    }
+    // Stack pages vertically
+    const w=pageCanvases[0].width;
+    const h=pageCanvases.reduce((s,c)=>s+c.height,0);
+    const merged=document.createElement('canvas');
+    merged.width=w; merged.height=h;
+    const ctx=merged.getContext('2d');
+    let y=0;
+    pageCanvases.forEach(c=>{ctx.drawImage(c,0,y);y+=c.height;});
+    downloadCanvas(merged,'polaroid-layout.png');
+  };
+
+  function downloadCanvas(canvas, filename){
+    canvas.toBlob(blob=>{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=filename;
+      document.body.appendChild(a);a.click();
+      document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    },'image/png');
+  }
+
+  // PDF download — one page per canvas
+  btnPDF.onclick=async()=>{
+    if(!pageCanvases.length)return;
+    btnPDF.disabled=true;btnPDF.textContent='Building PDF…';
+    try{
+      const {jsPDF}=window.jspdf;
+      const paper=$('paperSize').value.toUpperCase();
+      const orient=$('orientation').value==='landscape'?'l':'p';
+      const pdf=new jsPDF({orientation:orient,unit:'mm',format:paper,compress:true});
+
+      for(let i=0;i<pageCanvases.length;i++){
+        if(i>0) pdf.addPage(paper,orient);
+        const c=pageCanvases[i];
+        const dataUrl=c.toDataURL('image/jpeg',0.92);
+        const dims=pdf.internal.pageSize;
+        pdf.addImage(dataUrl,'JPEG',0,0,dims.getWidth(),dims.getHeight());
+      }
+
+      const fname=`polaroid-layout-${paper.toLowerCase()}.pdf`;
+      pdf.save(fname);
+    }catch(e){
+      alert('PDF generation failed: '+e.message);
+    }
+    btnPDF.disabled=false;btnPDF.textContent='Download PDF';
+  };
+
+  // Core layout engine
+  function mmToPx(mm,ppi){ return Math.round(mm*ppi/25.4); }
+
+  function generateLayout(){
+    if(!images.length)return[];
+    const PPI=200;
+    const paper=$('paperSize').value;
+    const orient=$('orientation').value;
+    const isPolaroid=$('style').value==='polaroid';
+    const borderColor=$('borderColor').value;
+    const hasShadow=$('shadow').value==='yes';
+    const caption=$('captionText').value.trim();
+    const imgMm=parseInt($('imgSize').value);
+    const gapMm=parseInt($('gapSize').value);
+    const marginMm=parseInt($('marginSize').value);
+
+    const paperMm={a4:{w:210,h:297},a3:{w:297,h:420}}[paper];
+    let pw=paperMm.w, ph=paperMm.h;
+    if(orient==='landscape'){let t=pw;pw=ph;ph=t;}
+
+    const PW=mmToPx(pw,PPI), PH=mmToPx(ph,PPI);
+    const MARGIN=mmToPx(marginMm,PPI), GAP=mmToPx(gapMm,PPI);
+    const imgPx=mmToPx(imgMm,PPI);
+
+    const bT=isPolaroid?mmToPx(4,PPI):0;
+    const bS=isPolaroid?mmToPx(4,PPI):0;
+    const capH=(isPolaroid&&caption)?mmToPx(10,PPI):0;
+    const bBot=isPolaroid?mmToPx(8,PPI)+capH:0;
+
+    const polW=imgPx+bS*2;
+    const polH=bT+imgPx+bBot;
+
+    const availW=PW-MARGIN*2, availH=PH-MARGIN*2;
+    const cols=Math.max(1,Math.floor((availW+GAP)/(polW+GAP)));
+    const rows=Math.max(1,Math.floor((availH+GAP)/(polH+GAP)));
+    const perPage=cols*rows;
+    const totalPages=Math.ceil(images.length/perPage);
+
+    infoBox.textContent=`${cols}×${rows} grid · ${perPage}/page · ${totalPages} page(s) · ${imgMm}mm`;
+    infoBox.style.display='block';
+
+    const pages=[];
+    for(let p=0;p<totalPages;p++){
+      const canvas=document.createElement('canvas');
+      canvas.width=PW; canvas.height=PH;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#f8f6f2';
+      ctx.fillRect(0,0,PW,PH);
+
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          const idx=p*perPage+r*cols+c;
+          if(idx>=images.length)break;
+          const x=MARGIN+c*(polW+GAP);
+          const y=MARGIN+r*(polH+GAP);
+          drawCell(ctx,images[idx].img,x,y,polW,polH,imgPx,bT,bS,capH,isPolaroid,borderColor,hasShadow,caption,PPI);
+        }
+      }
+      pages.push(canvas);
+    }
+    return pages;
+  }
+
+  function drawCell(ctx,img,x,y,polW,polH,imgPx,bT,bS,capH,isPolaroid,bColor,shadow,caption,ppi){
+    if(isPolaroid){
+      if(shadow){
+        ctx.save();
+        ctx.shadowColor='rgba(0,0,0,0.22)';
+        ctx.shadowBlur=14;
+        ctx.shadowOffsetX=3;ctx.shadowOffsetY=4;
+        ctx.fillStyle=bColor;
+        ctx.fillRect(x,y,polW,polH);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=bColor;
+        ctx.fillRect(x,y,polW,polH);
+      }
+    }
+
+    const pX=x+bS, pY=y+bT, pW=polW-bS*2, pH=imgPx;
+    const srcAR=img.width/img.height, dstAR=pW/pH;
+    let sx,sy,sw,sh;
+    if(srcAR>dstAR){sh=img.height;sw=sh*dstAR;sx=(img.width-sw)/2;sy=0;}
+    else{sw=img.width;sh=sw/dstAR;sx=0;sy=(img.height-sh)/2;}
+    ctx.drawImage(img,sx,sy,sw,sh,pX,pY,pW,pH);
+
+    if(isPolaroid&&caption&&capH>0){
+      const fs=Math.max(Math.round(ppi*0.13),11);
+      ctx.font=`italic ${fs}px Georgia,serif`;
+      ctx.fillStyle=isLight(bColor)?'#555555':'#aaaaaa';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(caption,x+polW/2,y+bT+imgPx+capH/2+2);
+    }
+  }
+
+  function isLight(hex){
+    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return (r*299+g*587+b*114)/1000>128;
+  }
+
+})();
+</script>
+</body>
+</html>

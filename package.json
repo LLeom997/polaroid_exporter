@@ -1,0 +1,12 @@
+{
+  "name": "polaroid-print-studio",
+  "version": "1.0.0",
+  "description": "Polaroid print layout generator — A4/A3, PNG/PDF export",
+  "scripts": {
+    "dev": "npx serve public",
+    "build": "echo 'Static site, no build needed'"
+  },
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
