@@ -4,710 +4,624 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Polaroid Print Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root {
-    --cream: #f5f0e8;
-    --dark: #1c1917;
-    --mid: #57534e;
-    --light: #e7e5e4;
-    --accent: #c2410c;
-    --white: #ffffff;
-    --border: rgba(0,0,0,0.1);
-    --radius: 8px;
-    --radius-lg: 12px;
-  }
+:root {
+  --bg: #f0edf8;
+  --sidebar-bg: #faf9ff;
+  --canvas-bg: #e8e3f5;
+  --surface: #ffffff;
+  --surface2: #f5f2ff;
+  --border: #ddd8f0;
+  --border2: #c9c3e8;
+  --text: #2d2650;
+  --text2: #7b72a8;
+  --text3: #a9a1c9;
+  --accent: #7c5cfc;
+  --accent-light: #ede8ff;
+  --accent-hover: #6644ee;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-lg: 0 8px 40px rgba(80,60,180,0.18);
+  font-family: 'Google Sans', 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Google Sans', 'Segoe UI', sans-serif;
+}
 
-  body {
-    font-family: 'Georgia', serif;
-    background: #0f0e0d;
-    color: var(--cream);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+header {
+  background: var(--surface);
+  border-bottom: 1.5px solid var(--border);
+  padding: 0 24px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: 0 1px 8px rgba(124,92,252,0.07);
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, #c5b4fa 0%, #f6c6ea 100%);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.logo h1 { font-size: 1rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.logo h1 span { font-weight: 400; color: var(--text3); font-size: 0.85em; }
+.header-pills { display: flex; gap: 6px; }
+.pill {
+  background: var(--accent-light); color: var(--accent);
+  font-size: 0.67rem; font-weight: 500; padding: 3px 10px;
+  border-radius: 20px; letter-spacing: 0.03em;
+}
 
-  header {
-    padding: 2rem 2rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
+.app {
+  display: grid;
+  grid-template-columns: 288px 1fr;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 54px);
+}
 
-  header h1 {
-    font-size: 1.6rem;
-    font-weight: normal;
-    letter-spacing: 0.05em;
-    color: var(--cream);
-  }
+/* SIDEBAR */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1.5px solid var(--border);
+  padding: 14px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.sec-label {
+  font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--text3);
+}
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field > span { font-size: 0.67rem; font-weight: 500; color: var(--text2); }
 
-  header p {
-    font-size: 0.8rem;
-    color: var(--mid);
-    margin-top: 4px;
-    font-family: monospace;
-    letter-spacing: 0.08em;
-  }
+select, input[type="text"] {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 6px 9px;
+  border-radius: var(--radius);
+  font-size: 0.76rem;
+  font-family: 'Google Sans', sans-serif;
+  width: 100%;
+  appearance: none; -webkit-appearance: none;
+  cursor: pointer; outline: none;
+  transition: border-color 0.13s;
+}
+select:focus, input[type="text"]:focus { border-color: var(--accent); background: #fff; }
 
-  .app {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    flex: 1;
-    height: calc(100vh - 80px);
-  }
+input[type="color"] {
+  width: 100%; height: 33px; padding: 3px 5px;
+  border-radius: var(--radius); border: 1.5px solid var(--border);
+  cursor: pointer; background: var(--surface2);
+}
 
-  .sidebar {
-    background: #161412;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    padding: 1.5rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
+.slider-wrap { display: flex; flex-direction: column; gap: 4px; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; }
+.slider-header span { font-size: 0.67rem; font-weight: 500; color: var(--text2); }
+.slider-header em {
+  font-style: normal; font-size: 0.67rem; font-weight: 700;
+  color: var(--accent); font-family: 'Google Sans Mono', monospace;
+}
+input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
 
-  .section-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--mid);
-    font-family: monospace;
-    margin-bottom: 8px;
-  }
+/* dropzone */
+#dropzone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 16px 10px;
+  text-align: center; cursor: pointer;
+  background: var(--surface2);
+  transition: border-color 0.13s, background 0.13s;
+}
+#dropzone:hover, #dropzone.dragover { border-color: var(--accent); background: var(--accent-light); }
+#dropzone .dz-icon { font-size: 1.5rem; margin-bottom: 4px; }
+#dropzone .dz-main { font-size: 0.78rem; font-weight: 500; color: var(--text); }
+#dropzone .dz-sub { font-size: 0.64rem; color: var(--text3); margin-top: 2px; }
 
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+#thumbGrid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 3px;
+}
+.thumb {
+  position: relative; aspect-ratio: 1;
+  border-radius: 5px; overflow: hidden; border: 1.5px solid var(--border);
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .rm {
+  position: absolute; top: 2px; right: 2px;
+  width: 14px; height: 14px;
+  background: rgba(45,38,80,0.82); color: #fff;
+  border: none; border-radius: 50%; font-size: 8px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.12s; line-height: 1;
+}
+.thumb:hover .rm { opacity: 1; }
 
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.img-count {
+  font-size: 0.65rem; color: var(--text3); text-align: right;
+  font-family: 'Google Sans Mono', monospace; display: none;
+}
 
-  label.field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+.btn-group { display: flex; flex-direction: column; gap: 7px; }
 
-  label.field span {
-    font-size: 0.7rem;
-    color: var(--mid);
-    font-family: monospace;
-    letter-spacing: 0.06em;
-  }
+button {
+  border: 1.5px solid var(--border2);
+  background: var(--surface); color: var(--text);
+  padding: 8px 14px; border-radius: var(--radius);
+  font-size: 0.76rem; font-family: 'Google Sans', sans-serif; font-weight: 500;
+  cursor: pointer; transition: all 0.13s; width: 100%;
+}
+button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+button.primary {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff; font-weight: 700;
+  box-shadow: 0 2px 10px rgba(124,92,252,0.28);
+}
+button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 
-  select, input[type="text"], input[type="color"] {
-    background: #1f1c1a;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--cream);
-    padding: 7px 10px;
-    border-radius: var(--radius);
-    font-size: 0.82rem;
-    font-family: Georgia, serif;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s;
-  }
+.info-strip {
+  font-size: 0.65rem; font-family: 'Google Sans Mono', monospace;
+  color: var(--accent); background: var(--accent-light);
+  border: 1.5px solid var(--border); border-radius: 20px;
+  padding: 5px 12px; text-align: center; display: none;
+}
 
-  select:hover, input[type="text"]:hover { border-color: rgba(255,255,255,0.2); }
-  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+/* CANVAS AREA */
+.canvas-area {
+  background: var(--canvas-bg);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.canvas-toolbar {
+  background: var(--surface);
+  border-bottom: 1.5px solid var(--border);
+  padding: 7px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; gap: 10px;
+}
+.toolbar-left { display: flex; align-items: center; gap: 10px; }
+.toolbar-right { display: flex; gap: 6px; }
+.toolbar-right button { width: auto; padding: 5px 14px; font-size: 0.72rem; }
 
-  input[type="color"] {
-    height: 36px;
-    padding: 3px 6px;
-    cursor: pointer;
-  }
+.page-badge {
+  background: var(--accent-light); color: var(--accent);
+  font-size: 0.7rem; font-weight: 700; padding: 3px 12px;
+  border-radius: 20px; font-family: 'Google Sans Mono', monospace; display: none;
+}
+.toolbar-title { font-size: 0.76rem; font-weight: 500; color: var(--text2); }
 
-  .slider-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+/* Split: big preview + thumb strip */
+.preview-split {
+  display: flex; flex: 1; overflow: hidden;
+}
 
-  input[type="range"] {
-    flex: 1;
-    accent-color: var(--accent);
-    cursor: pointer;
-    height: 3px;
-  }
+.page-viewer {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 24px; overflow: hidden; position: relative;
+}
+#placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; color: var(--text3);
+  pointer-events: none;
+}
+#placeholder .ph-icon {
+  width: 76px; height: 76px;
+  background: var(--surface); border-radius: 20px;
+  border: 2px dashed var(--border2);
+  display: flex; align-items: center; justify-content: center; font-size: 2rem;
+}
+#placeholder p { font-size: 0.8rem; color: var(--text3); font-weight: 500; }
 
-  .slider-val {
-    font-size: 0.72rem;
-    font-family: monospace;
-    color: var(--cream);
-    min-width: 38px;
-    text-align: right;
-  }
+#previewCanvas {
+  display: none;
+  border-radius: 5px;
+  box-shadow: var(--shadow-lg);
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
 
-  .divider {
-    height: 1px;
-    background: rgba(255,255,255,0.06);
-  }
+/* thumbnail strip for multiple pages */
+.thumb-strip {
+  width: 108px; flex-shrink: 0;
+  background: var(--surface); border-left: 1.5px solid var(--border);
+  overflow-y: auto; padding: 12px 8px;
+  display: none; flex-direction: column; gap: 8px; align-items: center;
+}
+.thumb-strip.visible { display: flex; }
 
-  #dropzone {
-    border: 1.5px dashed rgba(255,255,255,0.15);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-
-  #dropzone:hover, #dropzone.dragover {
-    border-color: var(--accent);
-    background: rgba(194,65,12,0.05);
-  }
-
-  #dropzone .icon { font-size: 1.8rem; margin-bottom: 6px; }
-  #dropzone .main-text { font-size: 0.85rem; color: var(--cream); }
-  #dropzone .sub-text { font-size: 0.7rem; color: var(--mid); margin-top: 3px; font-family: monospace; }
-
-  #thumbGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
-  }
-
-  .thumb {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 5px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
-    cursor: pointer;
-  }
-
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .thumb .remove {
-    position: absolute;
-    top: 2px; right: 2px;
-    width: 16px; height: 16px;
-    background: rgba(0,0,0,0.75);
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    font-size: 9px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-
-  .thumb:hover .remove { opacity: 1; }
-
-  .image-count {
-    font-size: 0.7rem;
-    font-family: monospace;
-    color: var(--mid);
-    text-align: right;
-  }
-
-  .btn-group { display: flex; flex-direction: column; gap: 7px; }
-
-  button {
-    border: 1px solid rgba(255,255,255,0.15);
-    background: transparent;
-    color: var(--cream);
-    padding: 9px 14px;
-    border-radius: var(--radius);
-    font-size: 0.82rem;
-    font-family: Georgia, serif;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.03em;
-    width: 100%;
-  }
-
-  button:hover:not(:disabled) {
-    border-color: var(--accent);
-    background: rgba(194,65,12,0.08);
-    color: #ff8c5a;
-  }
-
-  button:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: bold;
-  }
-
-  button.primary:hover:not(:disabled) {
-    background: #b43d0c;
-    border-color: #b43d0c;
-    color: #fff;
-  }
-
-  .info-pill {
-    font-size: 0.68rem;
-    font-family: monospace;
-    color: var(--mid);
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 20px;
-    padding: 4px 10px;
-    text-align: center;
-    display: none;
-  }
-
-  .canvas-area {
-    background: #0a0908;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 2rem;
-    gap: 1rem;
-  }
-
-  .canvas-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: rgba(255,255,255,0.1);
-    gap: 12px;
-  }
-
-  .canvas-placeholder .big { font-size: 3rem; }
-  .canvas-placeholder p { font-size: 0.8rem; font-family: monospace; letter-spacing: 0.1em; }
-
-  #previewCanvas {
-    display: none;
-    max-width: 100%;
-    border-radius: 4px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-  }
-
-  .page-nav {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.8rem;
-    font-family: monospace;
-    color: var(--mid);
-  }
-
-  .page-nav button {
-    width: auto;
-    padding: 5px 14px;
-    font-size: 0.75rem;
-  }
-
-  @media (max-width: 700px) {
-    .app { grid-template-columns: 1fr; height: auto; }
-    .canvas-area { min-height: 60vh; }
-  }
+.page-thumb {
+  width: 88px; cursor: pointer; border-radius: 5px;
+  overflow: hidden; border: 2px solid transparent;
+  transition: border-color 0.13s, box-shadow 0.13s;
+  background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.1); flex-shrink: 0;
+}
+.page-thumb canvas { width: 100%; display: block; }
+.page-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,252,0.2); }
+.page-thumb-label {
+  text-align: center; font-size: 0.58rem;
+  font-family: 'Google Sans Mono', monospace;
+  color: var(--text3); padding: 3px 0; background: var(--surface);
+}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Polaroid Print Studio</h1>
-  <p>A4 · A3 · Portrait · Landscape · PNG · PDF</p>
+  <div class="logo">
+    <div class="logo-icon">🖼</div>
+    <h1>Polaroid Print Studio <span>/ print-ready layouts</span></h1>
+  </div>
+  <div class="header-pills">
+    <span class="pill">A4 · A3</span>
+    <span class="pill">PNG · PDF</span>
+    <span class="pill">Polaroid · Plain</span>
+  </div>
 </header>
 
 <div class="app">
-  <aside class="sidebar">
+<aside class="sidebar">
 
-    <div>
-      <div class="section-label">Paper &amp; Layout</div>
-      <div class="control-group">
-        <div class="row2">
-          <label class="field">
-            <span>Paper</span>
-            <select id="paperSize">
-              <option value="a4">A4</option>
-              <option value="a3">A3</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Orientation</span>
-            <select id="orientation">
-              <option value="portrait">Portrait</option>
-              <option value="landscape">Landscape</option>
-            </select>
-          </label>
+  <div class="section">
+    <div class="sec-label">Paper &amp; Orientation</div>
+    <div class="row2">
+      <div class="field"><span>Paper</span>
+        <select id="paperSize"><option value="a4">A4</option><option value="a3">A3</option></select>
+      </div>
+      <div class="field"><span>Orientation</span>
+        <select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Style</div>
+    <div class="field"><span>Mode</span>
+      <select id="style"><option value="polaroid">Polaroid frame</option><option value="plain">Plain (no border)</option></select>
+    </div>
+    <div id="frameOptions">
+      <div class="row2" style="margin-bottom:8px">
+        <div class="field"><span>Frame color</span><input type="color" id="borderColor" value="#ffffff"></div>
+        <div class="field"><span>Shadow</span>
+          <select id="shadow"><option value="yes">On</option><option value="no">Off</option></select>
         </div>
       </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div>
-      <div class="section-label">Polaroid Style</div>
-      <div class="control-group">
-        <label class="field">
-          <span>Mode</span>
-          <select id="style">
-            <option value="polaroid">Polaroid frame</option>
-            <option value="plain">Plain (no border)</option>
-          </select>
-        </label>
-        <div id="frameOptions">
-          <div class="row2" style="margin-bottom:8px">
-            <label class="field">
-              <span>Frame color</span>
-              <input type="color" id="borderColor" value="#ffffff">
-            </label>
-            <label class="field">
-              <span>Shadow</span>
-              <select id="shadow">
-                <option value="yes">On</option>
-                <option value="no">Off</option>
-              </select>
-            </label>
-          </div>
-          <label class="field">
-            <span>Caption text</span>
-            <input type="text" id="captionText" placeholder="e.g. Summer 2024">
-          </label>
-        </div>
+      <div class="field"><span>Caption text</span>
+        <input type="text" id="captionText" placeholder="e.g. Summer 2024">
       </div>
     </div>
+  </div>
 
-    <div class="divider"></div>
+  <div class="section">
+    <div class="sec-label">Size &amp; Spacing</div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span>Image size</span><em id="imgSizeOut">60 mm</em></div>
+      <input type="range" id="imgSize" min="25" max="130" value="60" step="1">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span>Gap</span><em id="gapSizeOut">6 mm</em></div>
+      <input type="range" id="gapSize" min="2" max="25" value="6" step="1">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span>Margin</span><em id="marginSizeOut">10 mm</em></div>
+      <input type="range" id="marginSize" min="3" max="30" value="10" step="1">
+    </div>
+  </div>
 
-    <div>
-      <div class="section-label">Image Size &amp; Spacing</div>
-      <div class="control-group">
-        <label class="field">
-          <span>Image size — <span id="imgSizeOut">60</span> mm</span>
-          <div class="slider-row">
-            <input type="range" id="imgSize" min="25" max="130" value="60" step="1">
-          </div>
-        </label>
-        <label class="field">
-          <span>Gap — <span id="gapSizeOut">6</span> mm</span>
-          <div class="slider-row">
-            <input type="range" id="gapSize" min="2" max="25" value="6" step="1">
-          </div>
-        </label>
-        <label class="field">
-          <span>Margin — <span id="marginSizeOut">10</span> mm</span>
-          <div class="slider-row">
-            <input type="range" id="marginSize" min="3" max="30" value="10" step="1">
-          </div>
-        </label>
+  <div class="section">
+    <div class="sec-label">Images</div>
+    <div id="dropzone">
+      <div class="dz-icon">📷</div>
+      <div class="dz-main">Drop images or click to upload</div>
+      <div class="dz-sub">JPG · PNG · WebP · multiple OK</div>
+      <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+    </div>
+    <div id="thumbGrid"></div>
+    <div class="img-count" id="imgCount"></div>
+  </div>
+
+  <div class="info-strip" id="infoBox"></div>
+
+  <div class="btn-group">
+    <button class="primary" id="btnGenerate" disabled>Generate Layout</button>
+    <div class="row2">
+      <button id="btnPNG" disabled>↓ PNG</button>
+      <button id="btnPDF" disabled>↓ PDF</button>
+    </div>
+    <button id="btnClear">Clear all</button>
+  </div>
+
+</aside>
+
+<main class="canvas-area">
+  <div class="canvas-toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-title">Preview</span>
+      <span class="page-badge" id="pageBadge">Page 1 / 1</span>
+    </div>
+    <div class="toolbar-right">
+      <button id="btnPrevPage" disabled>← Prev</button>
+      <button id="btnNextPage" disabled>Next →</button>
+    </div>
+  </div>
+
+  <div class="preview-split">
+    <div class="page-viewer">
+      <div id="placeholder">
+        <div class="ph-icon">🖼</div>
+        <p>Upload images &amp; click Generate Layout</p>
       </div>
+      <canvas id="previewCanvas"></canvas>
     </div>
-
-    <div class="divider"></div>
-
-    <div>
-      <div class="section-label">Images</div>
-      <div id="dropzone">
-        <div class="icon">📷</div>
-        <div class="main-text">Drop images or click to upload</div>
-        <div class="sub-text">JPG · PNG · WebP · multiple OK</div>
-        <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
-      </div>
-      <div style="margin-top:8px" id="thumbGrid"></div>
-      <div class="image-count" id="imgCount" style="margin-top:6px;display:none"></div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div id="infoBox" class="info-pill"></div>
-
-    <div class="btn-group">
-      <button class="primary" id="btnGenerate" disabled>Generate Layout</button>
-      <div class="row2">
-        <button id="btnPNG" disabled>Download PNG</button>
-        <button id="btnPDF" disabled>Download PDF</button>
-      </div>
-      <button id="btnClear">Clear all images</button>
-    </div>
-
-  </aside>
-
-  <main class="canvas-area">
-    <div class="canvas-placeholder" id="placeholder">
-      <div class="big">🖼</div>
-      <p>Upload images and click Generate Layout</p>
-    </div>
-    <div class="page-nav" id="pageNav">
-      <button id="btnPrevPage">← Prev</button>
-      <span id="pageLabel">Page 1 / 1</span>
-      <button id="btnNextPage">Next →</button>
-    </div>
-    <canvas id="previewCanvas"></canvas>
-  </main>
+    <div class="thumb-strip" id="thumbStrip"></div>
+  </div>
+</main>
 </div>
 
 <script>
 (function(){
-  const $=id=>document.getElementById(id);
-  const dropzone=$('dropzone'), fileInput=$('fileInput'), thumbGrid=$('thumbGrid');
-  const btnGenerate=$('btnGenerate'), btnPNG=$('btnPNG'), btnPDF=$('btnPDF'), btnClear=$('btnClear');
-  const previewCanvas=$('previewCanvas'), placeholder=$('placeholder');
-  const pageNav=$('pageNav'), pageLabel=$('pageLabel');
-  const infoBox=$('infoBox'), imgCount=$('imgCount');
+const $=id=>document.getElementById(id);
+const dropzone=$('dropzone'),fileInput=$('fileInput'),thumbGrid=$('thumbGrid');
+const btnGenerate=$('btnGenerate'),btnPNG=$('btnPNG'),btnPDF=$('btnPDF'),btnClear=$('btnClear');
+const previewCanvas=$('previewCanvas'),placeholder=$('placeholder');
+const pageBadge=$('pageBadge'),thumbStrip=$('thumbStrip');
+const btnPrev=$('btnPrevPage'),btnNext=$('btnNextPage');
+const infoBox=$('infoBox'),imgCount=$('imgCount');
 
-  let images=[], pageCanvases=[], currentPage=0;
+let images=[],pageCanvases=[],currentPage=0;
 
-  // Sliders
-  function sliderBind(id, outId, suffix=''){
-    const el=$(id), out=$(outId);
-    el.oninput=()=>{ out.textContent=el.value+suffix; };
-  }
-  sliderBind('imgSize','imgSizeOut');
-  sliderBind('gapSize','gapSizeOut');
-  sliderBind('marginSize','marginSizeOut');
+// Sliders
+['imgSize','gapSize','marginSize'].forEach(id=>{
+  const el=$(id),out=$(id+'Out');
+  el.oninput=()=>out.textContent=el.value+' mm';
+});
 
-  $('style').onchange=()=>{
-    const isPol=$('style').value==='polaroid';
-    $('frameOptions').style.opacity=isPol?'1':'0.35';
-    $('frameOptions').style.pointerEvents=isPol?'':'none';
-  };
+$('style').onchange=()=>{
+  const isPol=$('style').value==='polaroid';
+  $('frameOptions').style.opacity=isPol?'1':'0.4';
+  $('frameOptions').style.pointerEvents=isPol?'auto':'none';
+};
 
-  // Drop / upload
-  dropzone.onclick=()=>fileInput.click();
-  dropzone.ondragover=e=>{e.preventDefault();dropzone.classList.add('dragover');};
-  dropzone.ondragleave=()=>dropzone.classList.remove('dragover');
-  dropzone.ondrop=e=>{e.preventDefault();dropzone.classList.remove('dragover');handleFiles(e.dataTransfer.files);};
-  fileInput.onchange=e=>handleFiles(e.target.files);
+// Upload
+dropzone.onclick=()=>fileInput.click();
+dropzone.ondragover=e=>{e.preventDefault();dropzone.classList.add('dragover');};
+dropzone.ondragleave=()=>dropzone.classList.remove('dragover');
+dropzone.ondrop=e=>{e.preventDefault();dropzone.classList.remove('dragover');handleFiles(e.dataTransfer.files);};
+fileInput.onchange=e=>handleFiles(e.target.files);
 
-  function handleFiles(files){
-    Array.from(files).forEach(file=>{
-      if(!file.type.startsWith('image/'))return;
-      const reader=new FileReader();
-      reader.onload=e=>{
-        const img=new Image();
-        img.onload=()=>{
-          images.push({img,name:file.name,src:e.target.result});
-          renderThumbs();
-          btnGenerate.disabled=false;
-        };
-        img.src=e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
+function handleFiles(files){
+  Array.from(files).forEach(file=>{
+    if(!file.type.startsWith('image/'))return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{images.push({img,name:file.name,src:ev.target.result});renderThumbs();btnGenerate.disabled=false;};
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
-  function renderThumbs(){
-    thumbGrid.innerHTML='';
-    images.forEach((item,i)=>{
-      const wrap=document.createElement('div');
-      wrap.className='thumb';
-      const im=document.createElement('img');
-      im.src=item.src;
-      const rm=document.createElement('button');
-      rm.className='remove';rm.textContent='×';
-      rm.onclick=e=>{e.stopPropagation();images.splice(i,1);renderThumbs();if(images.length===0){btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;}};
-      wrap.appendChild(im);wrap.appendChild(rm);
-      thumbGrid.appendChild(wrap);
-    });
-    imgCount.style.display=images.length?'block':'none';
-    imgCount.textContent=`${images.length} image${images.length!==1?'s':''} loaded`;
-  }
+function renderThumbs(){
+  thumbGrid.innerHTML='';
+  images.forEach((item,i)=>{
+    const wrap=document.createElement('div');wrap.className='thumb';
+    const im=document.createElement('img');im.src=item.src;
+    const rm=document.createElement('button');rm.className='rm';rm.textContent='×';
+    rm.onclick=e=>{e.stopPropagation();images.splice(i,1);renderThumbs();if(!images.length){btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;}};
+    wrap.appendChild(im);wrap.appendChild(rm);thumbGrid.appendChild(wrap);
+  });
+  imgCount.style.display=images.length?'block':'none';
+  imgCount.textContent=images.length+' image'+(images.length!==1?'s':'')+' loaded';
+}
 
-  btnClear.onclick=()=>{
-    images=[];renderThumbs();
-    btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;
-    pageCanvases=[];showPage(0);
-    placeholder.style.display='flex';previewCanvas.style.display='none';
-    pageNav.style.display='none';infoBox.style.display='none';
-  };
+btnClear.onclick=()=>{
+  images=[];renderThumbs();pageCanvases=[];currentPage=0;
+  btnGenerate.disabled=true;btnPNG.disabled=true;btnPDF.disabled=true;
+  btnPrev.disabled=true;btnNext.disabled=true;
+  previewCanvas.style.display='none';placeholder.style.display='flex';
+  thumbStrip.innerHTML='';thumbStrip.classList.remove('visible');
+  pageBadge.style.display='none';infoBox.style.display='none';
+};
 
-  btnGenerate.onclick=()=>{
-    pageCanvases=generateLayout();
-    if(pageCanvases.length){
-      currentPage=0;showPage(0);
-      btnPNG.disabled=false;btnPDF.disabled=false;
+btnGenerate.onclick=()=>{
+  pageCanvases=generateLayout();
+  if(pageCanvases.length){currentPage=0;buildThumbStrip();showPage(0);btnPNG.disabled=false;btnPDF.disabled=false;}
+};
+
+function buildThumbStrip(){
+  thumbStrip.innerHTML='';
+  if(pageCanvases.length<=1){thumbStrip.classList.remove('visible');return;}
+  thumbStrip.classList.add('visible');
+  pageCanvases.forEach((c,i)=>{
+    const wrap=document.createElement('div');wrap.className='page-thumb'+(i===0?' active':'');
+    const sc=document.createElement('canvas');
+    const scale=88/c.width;
+    sc.width=88;sc.height=Math.round(c.height*scale);
+    sc.getContext('2d').drawImage(c,0,0,sc.width,sc.height);
+    const lbl=document.createElement('div');lbl.className='page-thumb-label';lbl.textContent='Page '+(i+1);
+    wrap.appendChild(sc);wrap.appendChild(lbl);
+    wrap.onclick=()=>showPage(i);
+    thumbStrip.appendChild(wrap);
+  });
+}
+
+function showPage(n){
+  currentPage=Math.max(0,Math.min(n,pageCanvases.length-1));
+  const src=pageCanvases[currentPage];
+  const viewer=previewCanvas.parentElement;
+  const vw=viewer.clientWidth-48,vh=viewer.clientHeight-48;
+  const scale=Math.min(vw/src.width,vh/src.height);
+  previewCanvas.width=src.width;previewCanvas.height=src.height;
+  previewCanvas.getContext('2d').drawImage(src,0,0);
+  previewCanvas.style.width=Math.round(src.width*scale)+'px';
+  previewCanvas.style.height=Math.round(src.height*scale)+'px';
+  previewCanvas.style.display='block';
+  placeholder.style.display='none';
+
+  // Update strip
+  Array.from(thumbStrip.querySelectorAll('.page-thumb')).forEach((el,i)=>el.classList.toggle('active',i===currentPage));
+
+  const tot=pageCanvases.length;
+  pageBadge.textContent='Page '+(currentPage+1)+' / '+tot;
+  pageBadge.style.display=tot>1?'block':'none';
+  btnPrev.disabled=currentPage===0;
+  btnNext.disabled=currentPage===tot-1;
+}
+
+btnPrev.onclick=()=>showPage(currentPage-1);
+btnNext.onclick=()=>showPage(currentPage+1);
+
+// PNG — all pages stacked
+btnPNG.onclick=()=>{
+  if(!pageCanvases.length)return;
+  const w=pageCanvases[0].width,h=pageCanvases.reduce((s,c)=>s+c.height,0);
+  const out=document.createElement('canvas');out.width=w;out.height=h;
+  const ctx=out.getContext('2d');let y=0;
+  pageCanvases.forEach(c=>{ctx.drawImage(c,0,y);y+=c.height;});
+  out.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='polaroid-layout.png';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  },'image/png');
+};
+
+// PDF
+btnPDF.onclick=async()=>{
+  if(!pageCanvases.length)return;
+  btnPDF.textContent='Building…';btnPDF.disabled=true;
+  try{
+    const {jsPDF}=window.jspdf;
+    const paper=$('paperSize').value.toUpperCase();
+    const orient=$('orientation').value==='landscape'?'l':'p';
+    const pdf=new jsPDF({orientation:orient,unit:'mm',format:paper,compress:true});
+    for(let i=0;i<pageCanvases.length;i++){
+      if(i>0)pdf.addPage(paper,orient);
+      const url=pageCanvases[i].toDataURL('image/jpeg',0.93);
+      const dims=pdf.internal.pageSize;
+      pdf.addImage(url,'JPEG',0,0,dims.getWidth(),dims.getHeight());
     }
-  };
+    pdf.save('polaroid-'+paper.toLowerCase()+'.pdf');
+  }catch(e){alert('PDF error: '+e.message);}
+  btnPDF.textContent='↓ PDF';btnPDF.disabled=false;
+};
 
-  function showPage(n){
-    currentPage=Math.max(0,Math.min(n,pageCanvases.length-1));
-    if(!pageCanvases.length)return;
-    const src=pageCanvases[currentPage];
-    previewCanvas.width=src.width;
-    previewCanvas.height=src.height;
-    previewCanvas.getContext('2d').drawImage(src,0,0);
-    previewCanvas.style.display='block';
-    placeholder.style.display='none';
-    if(pageCanvases.length>1){
-      pageNav.style.display='flex';
-      pageLabel.textContent=`Page ${currentPage+1} / ${pageCanvases.length}`;
+// Layout engine
+function mmToPx(mm,ppi){return Math.round(mm*ppi/25.4);}
+
+function generateLayout(){
+  if(!images.length)return[];
+  const PPI=200;
+  const paper=$('paperSize').value;
+  const orient=$('orientation').value;
+  const isPol=$('style').value==='polaroid';
+  const bColor=$('borderColor').value;
+  const hasShadow=$('shadow').value==='yes';
+  const caption=$('captionText').value.trim();
+  const imgMm=+$('imgSize').value;
+  const gapMm=+$('gapSize').value;
+  const marginMm=+$('marginSize').value;
+
+  const paperMm={a4:{w:210,h:297},a3:{w:297,h:420}}[paper];
+  let pw=paperMm.w,ph=paperMm.h;
+  if(orient==='landscape'){let t=pw;pw=ph;ph=t;}
+
+  const PW=mmToPx(pw,PPI),PH=mmToPx(ph,PPI);
+  const MARGIN=mmToPx(marginMm,PPI),GAP=mmToPx(gapMm,PPI);
+  const imgPx=mmToPx(imgMm,PPI);
+
+  const bT=isPol?mmToPx(4,PPI):0;
+  const bS=isPol?mmToPx(4,PPI):0;
+  const capH=(isPol&&caption)?mmToPx(10,PPI):0;
+  const bBot=isPol?(mmToPx(8,PPI)+capH):0;
+
+  const polW=imgPx+bS*2;
+  const polH=bT+imgPx+bBot;
+
+  const cols=Math.max(1,Math.floor((PW-MARGIN*2+GAP)/(polW+GAP)));
+  const rows=Math.max(1,Math.floor((PH-MARGIN*2+GAP)/(polH+GAP)));
+  const perPage=cols*rows;
+  const total=Math.ceil(images.length/perPage);
+
+  infoBox.textContent=cols+'×'+rows+' grid · '+perPage+'/page · '+total+' page(s) · '+imgMm+'mm';
+  infoBox.style.display='block';
+
+  const pages=[];
+  for(let p=0;p<total;p++){
+    const canvas=document.createElement('canvas');
+    canvas.width=PW;canvas.height=PH;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#f9f7f4';
+    ctx.fillRect(0,0,PW,PH);
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const idx=p*perPage+r*cols+c;
+        if(idx>=images.length)break;
+        drawCell(ctx,images[idx].img,
+          MARGIN+c*(polW+GAP),MARGIN+r*(polH+GAP),
+          polW,polH,imgPx,bT,bS,capH,isPol,bColor,hasShadow,caption,PPI);
+      }
+    }
+    pages.push(canvas);
+  }
+  return pages;
+}
+
+function drawCell(ctx,img,x,y,polW,polH,imgPx,bT,bS,capH,isPol,bColor,shadow,caption,ppi){
+  if(isPol){
+    if(shadow){
+      ctx.save();
+      ctx.shadowColor='rgba(0,0,0,0.2)';ctx.shadowBlur=16;ctx.shadowOffsetX=2;ctx.shadowOffsetY=4;
+      ctx.fillStyle=bColor;ctx.fillRect(x,y,polW,polH);
+      ctx.restore();
     } else {
-      pageNav.style.display='none';
+      ctx.fillStyle=bColor;ctx.fillRect(x,y,polW,polH);
     }
   }
+  const pX=x+bS,pY=y+bT,pW=polW-bS*2,pH=imgPx;
+  const srcAR=img.width/img.height,dstAR=pW/pH;
+  let sx,sy,sw,sh;
+  if(srcAR>dstAR){sh=img.height;sw=sh*dstAR;sx=(img.width-sw)/2;sy=0;}
+  else{sw=img.width;sh=sw/dstAR;sx=0;sy=(img.height-sh)/2;}
+  ctx.drawImage(img,sx,sy,sw,sh,pX,pY,pW,pH);
 
-  $('btnPrevPage').onclick=()=>showPage(currentPage-1);
-  $('btnNextPage').onclick=()=>showPage(currentPage+1);
-
-  // PNG download — all pages stacked
-  btnPNG.onclick=()=>{
-    if(!pageCanvases.length)return;
-    if(pageCanvases.length===1){
-      downloadCanvas(pageCanvases[0],'polaroid-layout.png');
-      return;
-    }
-    // Stack pages vertically
-    const w=pageCanvases[0].width;
-    const h=pageCanvases.reduce((s,c)=>s+c.height,0);
-    const merged=document.createElement('canvas');
-    merged.width=w; merged.height=h;
-    const ctx=merged.getContext('2d');
-    let y=0;
-    pageCanvases.forEach(c=>{ctx.drawImage(c,0,y);y+=c.height;});
-    downloadCanvas(merged,'polaroid-layout.png');
-  };
-
-  function downloadCanvas(canvas, filename){
-    canvas.toBlob(blob=>{
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;a.download=filename;
-      document.body.appendChild(a);a.click();
-      document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url),2000);
-    },'image/png');
+  if(isPol&&caption&&capH>0){
+    const fs=Math.max(Math.round(ppi*0.13),11);
+    ctx.font='italic '+fs+'px Georgia,serif';
+    ctx.fillStyle=isLight(bColor)?'#666':'#bbb';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(caption,x+polW/2,y+bT+imgPx+capH/2+2);
   }
+}
 
-  // PDF download — one page per canvas
-  btnPDF.onclick=async()=>{
-    if(!pageCanvases.length)return;
-    btnPDF.disabled=true;btnPDF.textContent='Building PDF…';
-    try{
-      const {jsPDF}=window.jspdf;
-      const paper=$('paperSize').value.toUpperCase();
-      const orient=$('orientation').value==='landscape'?'l':'p';
-      const pdf=new jsPDF({orientation:orient,unit:'mm',format:paper,compress:true});
-
-      for(let i=0;i<pageCanvases.length;i++){
-        if(i>0) pdf.addPage(paper,orient);
-        const c=pageCanvases[i];
-        const dataUrl=c.toDataURL('image/jpeg',0.92);
-        const dims=pdf.internal.pageSize;
-        pdf.addImage(dataUrl,'JPEG',0,0,dims.getWidth(),dims.getHeight());
-      }
-
-      const fname=`polaroid-layout-${paper.toLowerCase()}.pdf`;
-      pdf.save(fname);
-    }catch(e){
-      alert('PDF generation failed: '+e.message);
-    }
-    btnPDF.disabled=false;btnPDF.textContent='Download PDF';
-  };
-
-  // Core layout engine
-  function mmToPx(mm,ppi){ return Math.round(mm*ppi/25.4); }
-
-  function generateLayout(){
-    if(!images.length)return[];
-    const PPI=200;
-    const paper=$('paperSize').value;
-    const orient=$('orientation').value;
-    const isPolaroid=$('style').value==='polaroid';
-    const borderColor=$('borderColor').value;
-    const hasShadow=$('shadow').value==='yes';
-    const caption=$('captionText').value.trim();
-    const imgMm=parseInt($('imgSize').value);
-    const gapMm=parseInt($('gapSize').value);
-    const marginMm=parseInt($('marginSize').value);
-
-    const paperMm={a4:{w:210,h:297},a3:{w:297,h:420}}[paper];
-    let pw=paperMm.w, ph=paperMm.h;
-    if(orient==='landscape'){let t=pw;pw=ph;ph=t;}
-
-    const PW=mmToPx(pw,PPI), PH=mmToPx(ph,PPI);
-    const MARGIN=mmToPx(marginMm,PPI), GAP=mmToPx(gapMm,PPI);
-    const imgPx=mmToPx(imgMm,PPI);
-
-    const bT=isPolaroid?mmToPx(4,PPI):0;
-    const bS=isPolaroid?mmToPx(4,PPI):0;
-    const capH=(isPolaroid&&caption)?mmToPx(10,PPI):0;
-    const bBot=isPolaroid?mmToPx(8,PPI)+capH:0;
-
-    const polW=imgPx+bS*2;
-    const polH=bT+imgPx+bBot;
-
-    const availW=PW-MARGIN*2, availH=PH-MARGIN*2;
-    const cols=Math.max(1,Math.floor((availW+GAP)/(polW+GAP)));
-    const rows=Math.max(1,Math.floor((availH+GAP)/(polH+GAP)));
-    const perPage=cols*rows;
-    const totalPages=Math.ceil(images.length/perPage);
-
-    infoBox.textContent=`${cols}×${rows} grid · ${perPage}/page · ${totalPages} page(s) · ${imgMm}mm`;
-    infoBox.style.display='block';
-
-    const pages=[];
-    for(let p=0;p<totalPages;p++){
-      const canvas=document.createElement('canvas');
-      canvas.width=PW; canvas.height=PH;
-      const ctx=canvas.getContext('2d');
-      ctx.fillStyle='#f8f6f2';
-      ctx.fillRect(0,0,PW,PH);
-
-      for(let r=0;r<rows;r++){
-        for(let c=0;c<cols;c++){
-          const idx=p*perPage+r*cols+c;
-          if(idx>=images.length)break;
-          const x=MARGIN+c*(polW+GAP);
-          const y=MARGIN+r*(polH+GAP);
-          drawCell(ctx,images[idx].img,x,y,polW,polH,imgPx,bT,bS,capH,isPolaroid,borderColor,hasShadow,caption,PPI);
-        }
-      }
-      pages.push(canvas);
-    }
-    return pages;
-  }
-
-  function drawCell(ctx,img,x,y,polW,polH,imgPx,bT,bS,capH,isPolaroid,bColor,shadow,caption,ppi){
-    if(isPolaroid){
-      if(shadow){
-        ctx.save();
-        ctx.shadowColor='rgba(0,0,0,0.22)';
-        ctx.shadowBlur=14;
-        ctx.shadowOffsetX=3;ctx.shadowOffsetY=4;
-        ctx.fillStyle=bColor;
-        ctx.fillRect(x,y,polW,polH);
-        ctx.restore();
-      } else {
-        ctx.fillStyle=bColor;
-        ctx.fillRect(x,y,polW,polH);
-      }
-    }
-
-    const pX=x+bS, pY=y+bT, pW=polW-bS*2, pH=imgPx;
-    const srcAR=img.width/img.height, dstAR=pW/pH;
-    let sx,sy,sw,sh;
-    if(srcAR>dstAR){sh=img.height;sw=sh*dstAR;sx=(img.width-sw)/2;sy=0;}
-    else{sw=img.width;sh=sw/dstAR;sx=0;sy=(img.height-sh)/2;}
-    ctx.drawImage(img,sx,sy,sw,sh,pX,pY,pW,pH);
-
-    if(isPolaroid&&caption&&capH>0){
-      const fs=Math.max(Math.round(ppi*0.13),11);
-      ctx.font=`italic ${fs}px Georgia,serif`;
-      ctx.fillStyle=isLight(bColor)?'#555555':'#aaaaaa';
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillText(caption,x+polW/2,y+bT+imgPx+capH/2+2);
-    }
-  }
-
-  function isLight(hex){
-    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-    return (r*299+g*587+b*114)/1000>128;
-  }
-
+function isLight(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return(r*299+g*587+b*114)/1000>128;
+}
 })();
 </script>
 </body>
